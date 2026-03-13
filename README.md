@@ -46,5 +46,3 @@ Class 14 [RNA-Seq Mini-Project](class14/class14.md)
 Class 17 [Obtaining and processing SRA datasets on AWS](class17/class17.md)
 
 Class 18 [Pertussis Mini Project](class18/class18.md)
-
-Class 19 [Cancer Mutation Analysis](class19/class19.md)

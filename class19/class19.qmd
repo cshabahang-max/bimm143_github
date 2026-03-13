@@ -1,0 +1,40 @@
+---
+title: "Class 19: Cancer Mutation Analysis"
+author: "Cyrus Shabahang (PID: 19145663)"
+format: html
+---
+
+>Q2. What are the tumor specific mutations in this particular case ( e.g. A130V)?
+
+```{r}
+library(bio3d)
+
+a <- read.fasta("A19145663_mutant_seq.fa")
+```
+
+```{r}
+x <- readLines("A19145663_mutant_seq.fa")
+
+hdr <- grep("^>", x)
+
+seqs <- sapply(seq_along(hdr), function(i) {
+  start <- hdr[i] + 1
+  end <- if (i < length(hdr)) hdr[i + 1] - 1 else length(x)
+  paste(x[start:end], collapse = "")
+})
+
+names(seqs) <- sub("^>", "", x[hdr])
+
+wt <- strsplit(seqs["wt_healthy"], "")[[1]]
+tumor <- strsplit(seqs["mutant_tumor"], "")[[1]]
+
+pos <- which(wt != tumor)
+mutations <- paste0(wt[pos], pos, tumor[pos])
+
+mutations
+```
+
+
+
+
+

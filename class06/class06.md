@@ -95,7 +95,7 @@ items from a given set of values, with or without replacement.
 sample(1:10, size=12, replace = TRUE)
 ```
 
-     [1] 10  4  3  1  5  9  3  8  3  5  6  3
+     [1]  5  3  1  4  1 10  4  1  2  5  6  1
 
 > Q. Write the code to generate a 12 nucleotide long DNA sequence?
 
@@ -103,7 +103,7 @@ sample(1:10, size=12, replace = TRUE)
 sample(c("A", "C", "G", "T"), size=12, replace = TRUE)
 ```
 
-     [1] "A" "A" "A" "C" "G" "G" "C" "A" "T" "A" "C" "T"
+     [1] "C" "G" "G" "T" "A" "T" "A" "C" "C" "A" "C" "G"
 
 > Q. Write a first version function called `generate_dna()` that
 > generates a user specified length `n` random DNA sequence?
@@ -119,7 +119,7 @@ generate_dna <- function(n) {
 generate_dna(10)
 ```
 
-     [1] "C" "C" "A" "T" "A" "T" "A" "C" "A" "C"
+     [1] "A" "G" "A" "C" "G" "T" "C" "T" "C" "G"
 
 > Q. Modify your function to return a FASTA-like sequence so rather
 > than: \[1\] “T” “A” “G” “T” “C” “A” “T”, we want “TAGTCAT”.
@@ -137,7 +137,7 @@ generate_dna <- function(n) {
 generate_dna(10)
 ```
 
-    [1] "CGCATATCTC"
+    [1] "CAGCTAGTGC"
 
 > Q. Give the user an option to return FASTA format output sequence or
 > standard multi-element vector format?
@@ -164,7 +164,7 @@ generate_dna(10)
 
     Hello there...
 
-    [1] "CCAACGGCTG"
+    [1] "GTCCGTTTGC"
 
 ``` r
 generate_dna(10, fasta= F)
@@ -172,7 +172,7 @@ generate_dna(10, fasta= F)
 
     General Kenobi
 
-     [1] "C" "T" "T" "C" "G" "G" "A" "C" "G" "T"
+     [1] "T" "C" "C" "C" "A" "A" "T" "G" "C" "A"
 
 ## A new cool function
 
@@ -193,7 +193,7 @@ generate_protein <- function(n, fasta = TRUE) {
 generate_protein(20)
 ```
 
-    [1] "IYAGWRDEDRCWRPWDESKF"
+    [1] "KPPLDEPFRSDDWFPKVGYP"
 
 > Q. Use your new `generate_protein()` function to generate sequences
 > between length 6 and 12 amino-acids in length and check if any of
@@ -214,16 +214,16 @@ for(i in 6:12) {
 ```
 
     >6
-    AIFDQI 
+    YKMHWA 
     >7
-    LSHEYWD 
+    QTDHAHR 
     >8
-    RLPLYMYA 
+    TRTHKDMN 
     >9
-    MNWPSENFT 
+    PYHPNIYVH 
     >10
-    FRSNAEFCTM 
+    EHNVAYFMTK 
     >11
-    EAPDTMTWVHT 
+    VPVRGMCRPCH 
     >12
-    QGYLNGIGKQSF 
+    FDQMCPGANTKW 

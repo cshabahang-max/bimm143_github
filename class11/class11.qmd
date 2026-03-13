@@ -1,0 +1,166 @@
+---
+title: "Class 11: Protein Structure Prediction with Alphafold"
+author: "Cyrus Shabahang (PID: A19145663)"
+format: pdf
+toc: TRUE
+---
+
+## Background 
+
+In this hands-on session we will utilize AlphaFold to predict protein structure from sequence (Jumper et al. 2021).
+
+Without the aid of such approaches, it can take years of expensive laboratory work to determine the structure of just one protein. With AlphaFold we can now accurately compute a typical protein structure in as little as ten minutes.
+
+The PDB database (the main repository of experimental structures) only has **~250 thousand** structures (we saw this in the last lab). The main protein sequence database has over **200 million** sequences! Only 0.125% of known sequences have a known structure - this is called the "structure knowledge gap".
+
+```{r}
+(250000 / 200000000) *100
+```
+
+- Structures are much harder to determine than sequences
+- They are expensive (on average ~$1 million each)
+- They take on average 3-5 years to solve! 
+
+# EBI AlphaFold Database 
+
+- The EBI has a database of pre-computed AlphaFold (AF) models called AFDB. 
+- This is constantly growing and can be useful to check before running AF ourselves. 
+
+## Running Alphafold
+
+We can download and run locally (on our own computers) but we need a GPU. Or we can use "cloud" computing to run this on someone elses computers. 
+
+We will use ColabFold <https://github.com/sokrypton/ColabFold> 
+
+We previously found there was no AFDB entry for our HIV sequence: 
+
+```
+>HIV-Pr-Dimer
+PQITLWQRPLVTIKIGGQLKEALLDTGADDTVLEEMSLPGRWKPKMIGGIGGFIKVRQYD
+QILIEICGHKAIGTVLVGPTPVNIIGRNLLTQIGCTLNF:PQITLWQRPLVTIKIGGQLK
+EALLDTGADDTVLEEMSLPGRWKPKMIGGIGGFIKVRQYDQILIEICGHKAIGTVLVGPT
+PVNIIGRNLLTQIGCTLNF
+```
+Here we will use AlphaFold2_mmseqs2 
+
+After I ran this in the online GPU resource, ColabFold get back a downloadable zip file that contained five ranked structure models in PDB format, MSA alignment files, and JSON files. 
+
+## Interpreting Results 
+
+I unzipped the downloadable files and looked in Mol to see a visualization and also in Bio3D. 
+
+## Structural analysis in R with Bio3D
+
+```{r}
+library(bio3d)
+library(jsonlite)
+library(pheatmap)
+
+results_dir <- "hivpr_23119/"
+list.files(results_dir)[1:20]
+```
+```{r}
+library(bio3d)
+
+pdb_files <- list.files(path = results_dir, 
+                        pattern = "\\.pdb$",
+                        full.names = TRUE)
+basename(pdb_files)
+length(pdb_files)
+
+pdbs <- pdbaln(pdb_files, fit = TRUE, exefile = "msa")
+pdbs
+```
+RMSD (heatmap)
+
+```{r}
+library(pheatmap)
+
+rd <- rmsd(pdbs, fit = TRUE)
+range(rd)
+
+colnames(rd) <- paste0("m", 1:nrow(rd))
+rownames(rd) <- paste0("m", 1:nrow(rd))
+
+pheatmap(rd)
+
+```
+
+From our RMSD range, we can see that certain models were very similar while others were very different from each other. 
+
+```{r}
+
+pdb_ref <- read.pdb("1hsg")   
+
+plotb3(pdbs$b[1,], typ="l", lwd=2, sse=pdb_ref,
+       ylab="pLDDT (B-factor)", xlab="Residue Position")
+
+lines(pdbs$b[2,], col="red")
+lines(pdbs$b[3,], col="blue")
+lines(pdbs$b[4,], col="darkgreen")
+lines(pdbs$b[5,], col="orange")
+
+abline(v = 99, col = "gray")
+
+
+```
+
+
+
+```{r}
+library(jsonlite)
+
+pae_files <- list.files(path = results_dir,
+                        pattern = "scores_rank_.*\\.json$",
+                        full.names = TRUE)
+basename(pae_files)
+pae1 <- read_json(pae_files[1], simplifyVector = TRUE)
+pae5 <- read_json(pae_files[5], simplifyVector = TRUE)
+pae1$max_pae
+pae5$max_pae
+plot.dmat(pae1$pae, xlab="Residue i", ylab="Residue j",
+          grid.col="black", zlim=c(0,30))
+plot.dmat(pae5$pae, xlab="Residue i", ylab="Residue j",
+          grid.col="black", zlim=c(0,30))
+
+```
+
+.a3m file:
+
+```{r}
+aln_file <- list.files(path = results_dir,
+                       pattern = "\\.a3m$",
+                       full.names = TRUE)
+
+aln <- read.fasta(aln_file[1], to.upper = TRUE)
+dim(aln$ali)
+sim <- conserv(aln)
+plotb3(sim[1:99], ylab="Conservation Score", xlab="Residue Position")
+
+```
+Core fit + RMSF
+
+```{r}
+core <- core.find(pdbs)
+core.inds <- print(core, vol = 0.5)
+
+xyz <- pdbfit(pdbs, core.inds, outpath = "corefit_structures")
+
+rf <- rmsf(xyz)
+plotb3(rf, sse = pdb_ref, ylab="RMSF (Å)", xlab="Residue Position")
+abline(v = 99, col = "gray")
+
+```
+Mapping conservation onto a PDB for Mol
+
+```{r}
+m1.pdb <- read.pdb(pdb_files[1])
+
+occ <- vec2resno(c(sim[1:99], sim[1:99]), m1.pdb$atom$resno)
+
+write.pdb(m1.pdb, o = occ, file = "m1_conserv.pdb")
+
+```
+
+
+

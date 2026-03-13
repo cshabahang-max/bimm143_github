@@ -42,16 +42,16 @@ km
 
     Cluster means:
               x         y
-    1  3.289802 -3.162236
-    2 -3.162236  3.289802
+    1 -2.721339  2.796476
+    2  2.796476 -2.721339
 
     Clustering vector:
-     [1] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2
-    [39] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+     [1] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1
+    [39] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 
     Within cluster sum of squares by cluster:
-    [1] 44.82788 44.82788
-     (between_SS / total_SS =  93.3 %)
+    [1] 62.92538 62.92538
+     (between_SS / total_SS =  87.9 %)
 
     Available components:
 
@@ -73,8 +73,8 @@ km$centers
 ```
 
               x         y
-    1  3.289802 -3.162236
-    2 -3.162236  3.289802
+    1 -2.721339  2.796476
+    2  2.796476 -2.721339
 
 > Q. What component of the results object details the cluster membership
 > vector (i.e. our main results of which points lie in which cluster)?
@@ -83,8 +83,8 @@ km$centers
 km$cluster
 ```
 
-     [1] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2
-    [39] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+     [1] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1
+    [39] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 
 > Q. Plot our clustering results with points colored by cluster and also
 > add the cluster centers as new points colored blue.
@@ -104,22 +104,22 @@ k4 <- kmeans(x, centers = 4)
 k4
 ```
 
-    K-means clustering with 4 clusters of sizes 8, 8, 22, 22
+    K-means clustering with 4 clusters of sizes 9, 15, 30, 6
 
     Cluster means:
               x         y
-    1  2.250061 -3.978220
-    2 -3.978220  2.250061
-    3 -2.865515  3.667890
-    4  3.667890 -2.865515
+    1  2.443576 -3.667824
+    2  2.393179 -1.995798
+    3 -2.721339  2.796476
+    4  4.334068 -3.115465
 
     Clustering vector:
-     [1] 1 1 4 4 4 4 4 1 4 4 1 1 4 4 4 1 4 4 4 4 1 4 4 4 1 4 4 4 4 4 3 3 3 3 3 2 3 3
-    [39] 3 2 3 3 3 3 2 3 3 3 2 2 3 3 2 3 3 3 3 3 2 2
+     [1] 4 4 4 2 1 1 2 1 1 2 2 2 4 2 2 1 2 1 2 2 2 2 2 1 2 1 2 4 4 1 3 3 3 3 3 3 3 3
+    [39] 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
 
     Within cluster sum of squares by cluster:
-    [1]  5.137368  5.137368 20.633529 20.633529
-     (between_SS / total_SS =  96.1 %)
+    [1]  7.572798  6.292396 62.925380 14.423824
+     (between_SS / total_SS =  91.2 %)
 
     Available components:
 
@@ -139,13 +139,13 @@ The metric
 km$tot.withinss
 ```
 
-    [1] 89.65576
+    [1] 125.8508
 
 ``` r
 k4$tot.withinss
 ```
 
-    [1] 51.54179
+    [1] 91.2144
 
 > Q. Let’s try different number of K (centers) from 1 to 30 and see what
 > the best result is.

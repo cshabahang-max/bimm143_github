@@ -1,0 +1,278 @@
+---
+title: "Class 14: RNA-Seq Mini-Project"
+author: "Cyrus Shabahang (PID:19145663)"
+format: pdf
+toc: TRUE
+---
+
+## Background
+
+The data for today's mini-project comes from a knock-down study of an important HOX gene. 
+
+## Data Import
+
+```{r, message=FALSE}
+library(DESeq2)
+```
+
+```{r}
+colData <- "GSE37704_metadata.csv"
+countData <- "GSE37704_featurecounts.csv"
+colData = read.csv(colData, row.names = 1)
+countData = read.csv(countData, row.names = 1)
+```
+
+```{r}
+head(colData)
+```
+
+```{r}
+head(countData)
+```
+
+### Clean up (data tidying)
+
+We need to remove that odd first column in countData namely countData$length. 
+
+```{r}
+countData$length <- NULL 
+head(countData)
+```
+
+This looks better but there are lots of zero entries in there so let's get rid of them as we have no data for these.
+
+```{r}
+countData <- countData[rowSums(countData) > 0, ]
+```
+
+## DESeq Analysis 
+
+### Setting up the required DESeq object
+
+```{r}
+countData <- as.matrix(countData)
+
+all(colnames(countData) == rownames(colData))
+
+colData <- colData[colnames(countData), , drop = FALSE]
+all(colnames(countData) == rownames(colData))
+```
+
+
+### Running DESeq
+
+```{r}
+dds <- DESeqDataSetFromMatrix(
+  countData = countData, 
+  colData = colData,
+  design = ~ condition 
+)
+
+dds$condition <- relevel(dds$condition, "control_sirna")
+
+dds <- DESeq(dds)
+```
+
+
+### Getting results
+
+```{r}
+res <- results(dds)
+summary(res)
+res[order(res$padj), ][1:10, ]
+```
+
+
+## Volcano Plot 
+
+```{r}
+library(ggplot2)
+
+res_df <- as.data.frame(res)
+res_df$padj[is.na(res_df$padj)] <- 1
+res_df$padj_plot <- pmax(res_df$padj, 1e-300)
+
+mycols <- rep("gray", nrow(res_df))
+mycols[abs(res_df$log2FoldChange) > 2] <- "blue"
+mycols[res_df$padj > 0.01] <- "gray"
+
+ggplot(res_df) +
+  aes(x = log2FoldChange, y = -log10(padj_plot)) +
+  geom_point(col = mycols) +
+  xlab("Log2(FoldChange)") +
+  ylab("-Log10(Adj P-value)") +
+  geom_vline(xintercept = c(-2, 2)) +
+  geom_hline(yintercept = -log10(0.01))
+```
+
+
+## Add Annotation
+
+```{r}
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+
+columns(org.Hs.eg.db)
+
+res$symbol = mapIds(org.Hs.eg.db,
+                    keys = rownames(res),
+                    keytype = "ENSEMBL",
+                    column = "SYMBOL",
+                    multiVals = "first")
+
+res$entrez = mapIds(org.Hs.eg.db, 
+                  keys = row.names(res),
+                  keytype = "ENSEMBL",
+                  column = "ENTREZID", 
+                  multiVals = "first")
+
+res$name = mapIds(org.Hs.eg.db,
+                  keys = row.names(res),
+                  keytype = "ENSEMBL",
+                  column = "GENENAME",
+                  multiVals = "first")
+
+head(res, 10)
+```
+
+Let's reorder these results by adjusted p-value and save them to a CSV file in our current project directory. 
+
+```{r}
+res <- res[!is.na(res$padj), ]
+res <- res[order(res$padj), ]
+write.csv(as.data.frame(res), file = "deseq_results.csv")
+```
+
+## Pathway Analysis 
+
+Let's load the packages and setup the KEGG data-sets we need:
+
+```{r}
+library(pathview)
+library(gage)
+library(gageData)
+
+data(kegg.sets.hs)
+data(sigmet.idx.hs)
+
+kegg.sets.hs = kegg.sets.hs[sigmet.idx.hs]
+
+head(kegg.sets.hs, 3)
+
+foldchanges <- res$log2FoldChange
+names(foldchanges) <- res$entrez
+
+foldchanges <- foldchanges[!is.na(names(foldchanges))]
+foldchanges <- foldchanges[!is.na(foldchanges)]
+
+head(foldchanges)
+```
+
+Let's run KEGG pathway enrichment with gage
+
+```{r}
+keggres <- gage(foldchanges, gsets = kegg.sets.hs)
+```
+
+Let's take a peek at the top pathways
+
+```{r}
+head(keggres$greater)
+head(keggres$less)
+```
+
+### KEGG 
+
+Top 5 upregulated KEGG pathways:
+
+```{r}
+keggrespathways_up <- rownames(keggres$greater)[1:5]
+keggresids_up <- substr(keggrespathways_up, start = 1, stop = 8)
+keggresids_up
+```
+
+Plotting top 5 upregulated pathways:
+
+```{r}
+pathview(gene.data = foldchanges, pathway.id = keggresids_up, species = "hsa")
+```
+
+```{r, echo=FALSE, out.width="90%", fig.align="center"}
+knitr::include_graphics(paste0(keggresids_up, ".pathview.png"))
+```
+
+
+Top 5 downregulated KEGG pathways
+
+```{r}
+keggrespathways_down <- rownames(keggres$less)[1:5]
+keggresids_down <- substr(keggrespathways_down, start = 1, stop = 8)
+keggresids_down
+```
+
+Plotting top 5 downregulated pathways:
+
+```{r, message=FALSE, warning=FALSE}
+data(go.sets.hs)
+data(go.subs.hs)
+```
+
+Focusing on Biological Process only
+```{r}
+gobpsets <- go.sets.hs[go.subs.hs$BP]
+```
+
+Running gage on GO BP sets:
+
+```{r}
+gobpres <- gage(foldchanges, gsets = gobpsets)
+```
+
+Let's view the top GO Biological Process terms:
+
+```{r}
+head(gobpres$greater) #upregulated GO BP
+head(gobpres$less)   #downregulated GO BP
+```
+
+### Reactome
+
+Significant genes for Reactome upload:
+```{r}
+sig_genes <- res[res$padj <= 0.05 & !is.na(res$padj), "symbol"]
+```
+
+Let's remove the missing symbols:
+```{r}
+sig_genes <- sig_genes[!is.na(sig_genes)]
+length(sig_genes)
+```
+
+Total number of significant genes is `r length(sig_genes)`.
+
+Text file for Reactome website upload:
+
+```{r}
+write.table(sig_genes,
+            file = "significant_genes.txt",
+            row.names = FALSE,
+            col.names = FALSE,
+            quote = FALSE)
+```
+
+>Q: What pathway has the most significant “Entities p-value”? Do the most significant pathways listed match your previous KEGG results? What factors could cause differences between the two methods?
+
+The pathway with the most significant "Entities p-value" is Cell Cycle, Mitotic with a p-value of 2.08E-5. The sginificant Reactome pathways are generally consistent with the KEGG results. The factors that could cause differences between the two methods include differences in pathway database curation and pathway definitions. Some other factors are gene id mapping and differences in background gene sets. 
+
+```{r}
+sig_genes <- res[res$padj <= 0.05 & !is.na(res$padj), "symbol"]
+sig_genes <- sig_genes[!is.na(sig_genes)] 
+print(paste("Total number of significant genes:", length(sig_genes)))
+
+write.table(sig_genes,
+            file = "significant_genes.txt",
+            row.names = FALSE,
+            col.names = FALSE,
+            quote = FALSE)
+```
+

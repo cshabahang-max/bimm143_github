@@ -1,0 +1,43 @@
+---
+title: "Class 12: Genome Informatics Lab Q13&Q14"
+author: "Cyrus Shabahang (PID:19145663)"
+format: pdf
+---
+
+> Q13 - Read this file into R and determine the sample size for each genotype and their corresponding median expression levels for each of these genotypes.
+
+```{r}
+url_w19 <- "https://bioboot.github.io/bggn213_W19/class-material/rs8067378_ENSG00000172057.6.txt"
+dat <- read.table(url_w19, header=TRUE, stringsAsFactors=FALSE)
+head(dat)
+str(dat)
+colnames(dat)
+```
+
+```{r}
+n_by_geno <- table(dat$geno)
+n_by_geno
+med_by_geno <- tapply(dat$exp, dat$geno, median)
+med_by_geno
+
+summary_tbl <- data.frame(
+  genotype = names(n_by_geno),
+  n = as.vector(n_by_geno), 
+  median_exp = as.vector(med_by_geno)
+  
+)
+summary_tbl
+```
+The sample sizes are: A/A: 108, A/G: 233, and G/G: 121. The median expression values are 31.24847 (A/A), 25.06486 (A/G), and 20.07363 (G/G). 
+
+
+> Q14 -  Generate a boxplot with a box per genotype, what could you infer from the relative expression value between A/A and G/G displayed in this plot? Does the SNP effect the expression of ORMDL3?
+
+```{r}
+boxplot(exp ~ geno, data=dat,
+        xlab = "rs8067378 genotype", 
+        ylab = "ORMDL3 expression",
+        main = "ORMDL3 expression vs rs8067378 genotype")
+```
+
+When the A/A box has a higher median than G/G, the A allele has a corresponding higher ORMDL3 expression. A/A has the highest expression, A/G is intermediate, and G/G has the lowest expression. If the G/G box has a higher median than A/A, then the G allele has a higher ORMDL3 expression. The SNP does affect the expression of ORMDL3.  
